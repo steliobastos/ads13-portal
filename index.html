@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ADS13 — Portal de Provas</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --green:#1D9E75;--gl:#E1F5EE;--gd:#085041;
+  --ink:#1a1a1a;--ink2:#444;--ink3:#888;
+  --surface:#f7f6f3;--white:#fff;
+  --border:#e2e0da;--r:12px;--rs:8px;
+  --danger:#E24B4A;--amber:#BA7517;--blue:#185FA5;--bl:#E6F1FB;
+  --purple:#534AB7;--pl:#EEEDFE;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--ink);min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:2rem 1rem 4rem}
+.site-header{width:100%;max-width:740px;display:flex;align-items:center;justify-content:space-between;margin-bottom:2.5rem}
+.logo{font-family:'DM Serif Display',serif;font-size:1.25rem}.logo span{color:var(--green)}
+.tag{font-size:11px;font-weight:500;background:var(--gl);color:var(--gd);padding:4px 10px;border-radius:20px}
+.card{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:2rem;width:100%;max-width:740px;animation:fu .3s ease both}
+@keyframes fu{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.hidden{display:none!important}
+.field{margin-bottom:1.1rem}
+.field label{display:block;font-size:.79rem;font-weight:500;color:var(--ink2);margin-bottom:.35rem;letter-spacing:.03em}
+.field input,.field select,.field textarea{width:100%;padding:.6rem .85rem;font-size:.93rem;font-family:inherit;border:1px solid var(--border);border-radius:var(--rs);background:var(--surface);color:var(--ink);outline:none;transition:border-color .15s}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--green);background:var(--white)}
+.field textarea{resize:vertical;min-height:60px}
+.btn{padding:.65rem 1.4rem;font-size:.9rem;font-weight:600;font-family:inherit;border:none;border-radius:var(--rs);cursor:pointer;transition:background .15s,transform .1s}
+.btn:active{transform:scale(.98)}
+.btn-g{background:var(--green);color:#fff}.btn-g:hover{background:var(--gd)}
+.btn-b{background:var(--blue);color:#fff}.btn-b:hover{background:#0c447c}
+.btn-out{background:var(--white);color:var(--ink2);border:1px solid var(--border)}.btn-out:hover{background:var(--surface)}
+.btn-full{width:100%;margin-top:.5rem}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.sec-title{font-family:'DM Serif Display',serif;font-size:1.5rem;margin-bottom:.35rem}
+.sec-sub{color:var(--ink3);font-size:.88rem;margin-bottom:1.5rem;line-height:1.5}
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:1.75rem}
+.tab-btn{padding:.65rem 1.1rem;font-size:.85rem;font-weight:500;font-family:inherit;background:transparent;border:none;border-bottom:2px solid transparent;margin-bottom:-1px;cursor:pointer;color:var(--ink3);transition:color .15s,border-color .15s}
+.tab-btn.active{color:var(--green);border-bottom-color:var(--green)}
+.badge{font-size:11px;font-weight:500;padding:3px 9px;border-radius:20px;display:inline-block}
+.bg{background:var(--gl);color:var(--gd)} .bb{background:var(--bl);color:var(--blue)}
+.bp{background:var(--pl);color:var(--purple)} .ba{background:#FAEEDA;color:#633806}
+.br{background:#FCEBEB;color:#791F1F}
+/* LOADING */
+.loading-wrap{text-align:center;padding:2.5rem 1rem}
+.spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--green);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 1rem}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-txt{font-size:.9rem;color:var(--ink3)}
+.loading-sub{font-size:.8rem;color:var(--ink3);margin-top:.35rem}
+/* SYNC STATUS */
+.sync-bar{display:flex;align-items:center;gap:.5rem;font-size:.78rem;padding:.5rem .85rem;border-radius:var(--rs);margin-bottom:1.25rem}
+.sync-bar.ok{background:var(--gl);color:var(--gd)}
+.sync-bar.err{background:#FCEBEB;color:#791F1F}
+.sync-bar.loading{background:var(--surface);color:var(--ink3)}
+.sync-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.sync-bar.ok .sync-dot{background:var(--green)}
+.sync-bar.err .sync-dot{background:var(--danger)}
+.sync-bar.loading .sync-dot{background:var(--ink3);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+/* PROVA */
+.prova-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1.75rem;gap:1rem}
+.p-meta h2{font-family:'DM Serif Display',serif;font-size:1.3rem;margin-bottom:.2rem}
+.p-meta p{font-size:.81rem;color:var(--ink3)}
+.timer{font-family:'DM Mono',monospace;font-size:1.4rem;font-weight:500;background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);padding:.4rem .9rem;min-width:84px;text-align:center;flex-shrink:0;transition:color .3s,border-color .3s}
+.timer.warn{color:var(--amber);border-color:var(--amber)} .timer.danger{color:var(--danger);border-color:var(--danger)}
+.prog-wrap{margin-bottom:1.5rem}
+.prog-label{display:flex;justify-content:space-between;font-size:.77rem;color:var(--ink3);margin-bottom:.4rem}
+.prog-track{height:4px;background:var(--border);border-radius:2px;overflow:hidden}
+.prog-fill{height:100%;background:var(--green);border-radius:2px;transition:width .3s}
+.q-label{font-size:.71rem;font-weight:600;letter-spacing:.06em;color:var(--ink3);text-transform:uppercase;margin-bottom:.45rem}
+.q-label .dif{color:var(--danger);margin-left:.35rem}
+.q-text{font-size:.96rem;line-height:1.65;margin-bottom:1.2rem;white-space:pre-wrap}
+.alts{display:flex;flex-direction:column;gap:.55rem;margin-bottom:1.25rem}
+.alt{display:flex;align-items:flex-start;gap:.7rem;padding:.65rem .85rem;border:1px solid var(--border);border-radius:var(--rs);cursor:pointer;transition:border-color .15s,background .15s;font-size:.9rem;line-height:1.5}
+.alt:hover{border-color:var(--green);background:var(--gl)} .alt input{display:none}
+.alt.sel{border-color:var(--green);background:var(--gl)}
+.alt-l{font-family:'DM Mono',monospace;font-size:.78rem;font-weight:500;color:var(--gd);min-width:16px;margin-top:1px;flex-shrink:0}
+.dots{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;margin-bottom:.9rem}
+.dot{width:27px;height:27px;border-radius:50%;border:1.5px solid var(--border);background:var(--white);font-size:.7rem;font-weight:500;color:var(--ink3);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s}
+.dot.r{background:var(--gl);border-color:var(--green);color:var(--gd)} .dot.cur{border-color:var(--green);border-width:2px;color:var(--green);font-weight:600}
+.nav-row{display:flex;justify-content:space-between;align-items:center}
+/* RESULTADO */
+.score-box{text-align:center;padding:1.5rem 0 1.25rem;border-bottom:1px solid var(--border);margin-bottom:1.5rem}
+.score-n{font-family:'DM Serif Display',serif;font-size:3.75rem;line-height:1;margin-bottom:.25rem}
+.score-n.ok{color:var(--green)} .score-n.nok{color:var(--danger)}
+.score-s{font-size:.83rem;color:var(--ink3)}
+.gab-list{list-style:none;display:flex;flex-direction:column;gap:.65rem}
+.gab-item{display:flex;align-items:flex-start;gap:.7rem;padding:.65rem .85rem;border-radius:var(--rs);font-size:.86rem}
+.gab-item.ok{background:#E1F5EE} .gab-item.nok{background:#FCEBEB}
+.gab-icon{flex-shrink:0;margin-top:1px} .gab-t{line-height:1.5}
+.gab-j{font-size:.78rem;color:var(--ink3);margin-top:.25rem}
+.msg{text-align:center;font-size:.86rem;color:var(--ink3);margin-top:1.5rem;padding:.75rem;background:var(--surface);border-radius:var(--rs)}
+.msg.ok{color:var(--green)} .msg.err{color:var(--danger)}
+/* AGUARDANDO */
+.await-box{text-align:center;padding:2rem 1rem}
+.await-icon{font-size:2.5rem;margin-bottom:1rem}
+.await-box h2{font-family:'DM Serif Display',serif;font-size:1.4rem;margin-bottom:.5rem}
+.await-box p{color:var(--ink3);font-size:.9rem;line-height:1.6;max-width:460px;margin:0 auto}
+/* RUBRICA */
+.rubric-row{display:grid;grid-template-columns:1fr 140px;gap:12px;align-items:start;padding:.65rem 0;border-bottom:1px solid var(--border)}
+.rubric-row:last-child{border-bottom:none}
+.rubric-crit{font-size:.88rem;font-weight:500;margin-bottom:.2rem}
+.rubric-desc{font-size:.78rem;color:var(--ink3);line-height:1.4}
+.rubric-score{display:flex;flex-direction:column;gap:4px}
+.rubric-score label{font-size:.75rem;color:var(--ink3)}
+.rubric-score input[type=number]{width:100%;padding:.45rem .65rem;font-size:.9rem;font-family:'DM Mono',monospace;border:1px solid var(--border);border-radius:var(--rs);text-align:center;background:var(--surface);outline:none}
+.rubric-score input:focus{border-color:var(--green);background:var(--white)}
+.rubric-total{display:flex;justify-content:space-between;align-items:center;background:var(--gl);border-radius:var(--rs);padding:.75rem 1rem;margin-top:.75rem;font-weight:500}
+.rubric-total-num{font-family:'DM Mono',monospace;font-size:1.3rem;color:var(--gd)}
+/* TABELA */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.82rem}
+thead th{background:var(--surface);padding:.55rem .75rem;text-align:left;font-size:.71rem;font-weight:600;letter-spacing:.04em;color:var(--ink3);text-transform:uppercase;border-bottom:1px solid var(--border);white-space:nowrap}
+tbody td{padding:.55rem .75rem;border-bottom:1px solid var(--border);vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--surface)}
+.nc{font-family:'DM Mono',monospace;font-weight:500;text-align:center}
+.nf{font-family:'DM Mono',monospace;font-weight:600;font-size:.95rem;text-align:center}
+.nf.ok{color:var(--green)} .nf.nok{color:var(--danger)} .nf.nd{color:var(--ink3)}
+.eq-chip{font-size:10px;padding:2px 6px;border-radius:10px;margin-left:4px;font-weight:500}
+.info-box{background:var(--bl);border:1px solid #B5D4F4;border-radius:var(--rs);padding:.75rem 1rem;font-size:.82rem;color:var(--blue);margin-bottom:1.25rem;line-height:1.6}
+.sel-row{display:flex;gap:8px;margin-bottom:1.25rem}
+.sel-row select{flex:1;padding:.55rem .75rem;font-size:.85rem;font-family:inherit;border:1px solid var(--border);border-radius:var(--rs);background:var(--surface);outline:none}
+.sel-row select:focus{border-color:var(--green)}
+.cap-info{background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);padding:.75rem 1rem;font-size:.82rem;color:var(--ink2);margin-bottom:1rem;line-height:1.6}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="logo">ADS<span>13</span></div>
+  <span class="tag">IFCE — Introdução à Computação</span>
+</header>
+
+<script>
+/* ═══════════════════════════════════
+   CONFIGURAÇÃO — edite apenas aqui
+═══════════════════════════════════ */
+const CFG = {
+  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbwBmn90wdjKhnkjAyNu8RaYrlruEPMlZ29G3HiRcDhVSe8QFRhRwn0kIOd0DtX6-mwv/exec",
+  TEMPO_MIN: 30,
+  SENHA_HASH: "01e59ae87cc2f38f218c000e120435de3f1e20120d2dc65b1beb36fda101a5b8", // SHA-256 de "ads13sem"
+};
+
+/* Equipes */
+const EQUIPES = {
+  "Abner Eduardo Lopes de Lima":1,"Alice Martins da Silva":1,
+  "Andressa Adna Maia da Silva":1,"Antonio Cordeiro de Farias Junior":1,
+  "Bruno Daniel Ferro Oliveira":1,"Camila Marcilon Nottingham Barros Leal":1,
+  "Carlos Arthur Oliveira de Sousa":2,"Davy Lucas da Silva Costa":2,
+  "Diogo de Souza Florêncio":2,"Erick Lima da Costa":2,
+  "Gabriela Santiago Alves":2,"Heloisa Pierre Oliveira":2,"Heloisa Regina Pinto Holanda":2,
+  "Isael Gustavo Souza Filho":3,"José Ilcle Maia do Nascimento":3,
+  "João Gabriel Eusebio de Souza":3,"João Gabriel do Carmo Gomes":3,
+  "João Ricardo da Silva Sousa":3,"Laís de Moura Andrade":3,
+  "Luiz Henrique Gonçalves de Sousa":4,"Luiz Ribeiro Barros Netto":4,
+  "Maria Cecilia Freitas Fonteles":4,"Mauricio Oliveira da Costa":4,
+  "Pedro Angelo dos Santos Filho":4,"Renata Araújo da Silva":4,
+  "Rubens Vinicius Mendes de Oliveira":5,"Thiago Ferreira da Silva":5,
+  "Vinicius da Silva Martins":5,"Walison da Silva Xaves":5,
+  "Wladson Jacinto Nascimento":5,"Ycaro Correia Gonçalves":5,
+};
+const NOMES = Object.keys(EQUIPES).sort();
+
+const CAPS = [
+  {titulo:"Capítulo 1 — Introdução",            data:"22/05/2026",aba:"Cap1",equipe:1},
+  {titulo:"Capítulo 2 — CPU",                    data:"29/05/2026",aba:"Cap2",equipe:2},
+  {titulo:"Capítulo 3 — Unidade de Controle",    data:"05/06/2026",aba:"Cap3",equipe:3},
+  {titulo:"Capítulo 4 — Conjunto de Instruções", data:"12/06/2026",aba:"Cap4",equipe:4},
+  {titulo:"Capítulo 5 — Sistema de Memória",     data:"19/06/2026",aba:"Cap5",equipe:5},
+];
+
+let PROVA_ATUAL = null; /* Carregada do Apps Script só quando o aluno inicia a prova */
+
+/* Estado da sessão */
+let NOTAS_PROVA = {0:{},1:{},2:{},3:{},4:{}};
+let RUBRICA = {};
+let ST = {capIdx:null,qi:0,resp:[],nome:'',mat:'',eq:0,iv:null,seg:0};
+let SYNC = {ok:false, ts:null, erros:[]};
+</script>
+
+<!-- ════ TELA LOADING ════ -->
+<div class="card" id="tela-loading">
+  <div class="loading-wrap">
+    <div class="spinner"></div>
+    <div class="loading-txt">Carregando dados da planilha…</div>
+    <div class="loading-sub" id="loading-sub">Buscando notas registradas anteriormente… (máx. 8 segundos)</div>
+  </div>
+</div>
+
+<!-- ════ TELA LOGIN ════ -->
+<div class="card hidden" id="tela-login">
+  <div class="sec-title">Portal de Provas</div>
+  <div class="sec-sub">Selecione seu perfil para continuar.</div>
+  <div id="sync-status" class="sync-bar loading" style="margin-bottom:1.25rem">
+    <div class="sync-dot"></div>
+    <span id="sync-txt">Verificando sincronização…</span>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.75rem">
+    <button class="btn btn-g" onclick="showPerfil('aluno')">👤 Sou aluno</button>
+    <button class="btn btn-b" onclick="showPerfil('prof')">🎓 Sou professor</button>
+  </div>
+  <div id="form-aluno" class="hidden">
+    <div class="field"><label>Nome completo</label><select id="inp-nome"><option value="">— selecione seu nome —</option></select></div>
+    <div class="field"><label>Matrícula</label><input type="text" id="inp-mat" placeholder="Ex: 2024001234"></div>
+    <div class="field"><label>Prova do dia</label>
+      <select id="inp-cap">
+        <option value="">— selecione seu nome primeiro —</option>
+      </select>
+    </div>
+    <button id="btn-entrar" class="btn btn-g btn-full" onclick="entrarAluno()">Entrar →</button>
+  </div>
+  <div id="form-prof" class="hidden">
+    <div class="field"><label>Senha do professor</label><input type="password" id="inp-senha" placeholder="••••••••" onkeydown="if(event.key==='Enter')entrarProf()"></div>
+    <button class="btn btn-b btn-full" onclick="entrarProf()">Acessar painel →</button>
+  </div>
+</div>
+
+<!-- ════ TELA AGUARDA ════ -->
+<div class="card hidden" id="tela-aguarda">
+  <div class="await-box">
+    <div class="await-icon">🎤</div>
+    <h2 id="ag-titulo">Sua equipe apresenta hoje!</h2>
+    <p id="ag-texto"></p>
+    <div style="margin-top:1.25rem" id="ag-badge"></div>
+  </div>
+</div>
+
+<!-- ════ TELA PROVA ════ -->
+<div class="card hidden" id="tela-prova">
+  <div class="prova-header">
+    <div class="p-meta"><h2 id="p-titulo"></h2><p id="p-info"></p></div>
+    <div class="timer" id="timer">30:00</div>
+  </div>
+  <div class="prog-wrap">
+    <div class="prog-label"><span id="prog-q">Questão 1 de 10</span><span id="prog-r">0 respondidas</span></div>
+    <div class="prog-track"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+  </div>
+  <div class="q-label" id="q-label"></div>
+  <div class="q-text"  id="q-text"></div>
+  <div class="alts"    id="q-alts"></div>
+  <div class="dots"    id="q-dots"></div>
+  <div class="nav-row">
+    <button class="btn btn-out" id="btn-ant"  onclick="navQ(-1)">← Anterior</button>
+    <button class="btn btn-out" id="btn-prox" onclick="navQ(1)">Próxima →</button>
+  </div>
+  <button class="btn btn-g btn-full hidden" id="btn-submit" style="margin-top:1.25rem" onclick="confirmarEnvio()">Finalizar e enviar prova</button>
+</div>
+
+<!-- ════ TELA RESULTADO ════ -->
+<div class="card hidden" id="tela-resultado">
+  <div class="score-box">
+    <div class="score-n" id="score-n"></div>
+    <div class="score-s" id="score-s"></div>
+  </div>
+  <ul class="gab-list" id="gab-list"></ul>
+  <div class="msg" id="msg-envio">Enviando resultado…</div>
+</div>
+
+<!-- ════ PAINEL PROFESSOR ════ -->
+<div class="card hidden" id="tela-prof">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem">
+    <div class="sec-title" style="margin-bottom:0">Painel do professor</div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="btn btn-out" onclick="sincronizar()" style="font-size:.8rem" id="btn-sync">↻ Sincronizar</button>
+      <button class="btn btn-out" onclick="location.reload()" style="font-size:.8rem">Sair</button>
+    </div>
+  </div>
+  <div id="sync-status-prof" class="sync-bar ok" style="margin-bottom:1.25rem">
+    <div class="sync-dot"></div>
+    <span id="sync-txt-prof">Dados sincronizados com a planilha.</span>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="mudarAba('rubrica',this)">Rubrica dos seminários</button>
+    <button class="tab-btn"        onclick="mudarAba('notas',this)">Notas consolidadas</button>
+  </div>
+
+  <!-- ABA RUBRICA -->
+  <div id="aba-rubrica">
+    <div class="info-box">Selecione a equipe para ver todos os alunos e preencher as rubricas de uma vez. A nota do seminário vale 50% da nota final de cada aluno.</div>
+    <div class="sel-row">
+      <select id="sel-eq-rub" onchange="carregarEquipe()">
+        <option value="">— selecione a equipe —</option>
+        <option value="1">Equipe 1 · Cap. 1 · 22/05</option>
+        <option value="2">Equipe 2 · Cap. 2 · 29/05</option>
+        <option value="3">Equipe 3 · Cap. 3 · 05/06</option>
+        <option value="4">Equipe 4 · Cap. 4 · 12/06</option>
+        <option value="5">Equipe 5 · Cap. 5 · 19/06</option>
+      </select>
+    </div>
+    <div id="rubrica-equipe-wrap" class="hidden">
+      <div class="cap-info" id="rub-eq-info"></div>
+      <div id="rubrica-cards"></div>
+      <button class="btn btn-g btn-full" id="btn-salvar-equipe" onclick="salvarEquipe()" style="margin-top:1rem">Salvar rubricas da equipe</button>
+      <div class="msg hidden" id="msg-rub"></div>
+    </div>
+  </div>
+
+  <!-- ABA NOTAS -->
+  <div id="aba-notas" class="hidden">
+    <div class="info-box">
+      <strong>Como a nota final é calculada:</strong><br>
+      Nota final = (média das provas dos colegas sobre o capítulo apresentado + rubrica do professor) ÷ 2.<br>
+      Nenhum aluno faz a prova do próprio capítulo — cada aluno faz 4 provas que compõem as notas dos outros.
+    </div>
+    <div class="sel-row">
+      <select id="fil-eq" onchange="renderNotas()">
+        <option value="">Todas as equipes</option>
+        <option value="1">Equipe 1</option><option value="2">Equipe 2</option>
+        <option value="3">Equipe 3</option><option value="4">Equipe 4</option>
+        <option value="5">Equipe 5</option>
+      </select>
+      <button class="btn btn-out" onclick="exportCSV()" style="font-size:.83rem">Exportar CSV</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Aluno</th><th>Equipe</th><th>Cap. apresentado</th>
+            <th>Provas<br>computadas</th>
+            <th>Média<br>da turma</th>
+            <th>Rubrica<br>prof.</th>
+            <th>Nota final</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-notas"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── helpers ── */
+const $  = id => document.getElementById(id);
+const H  = id => $(id).classList.add('hidden');
+const Sh = id => $(id).classList.remove('hidden');
+const TELAS = ['tela-loading','tela-login','tela-aguarda','tela-prova','tela-resultado','tela-prof'];
+function ir(id){ TELAS.forEach(t => t===id ? Sh(t) : H(t)); }
+
+/* ── SHEETS HELPERS ── */
+/* As chamadas vão para o Google Apps Script — sem API Key exposta no código */
+
+async function sheetsGet(range){
+  const url = CFG.APPS_SCRIPT_URL + '?action=get&range=' + encodeURIComponent(range);
+  const r = await fetch(url, { redirect: 'follow' });
+  if(!r.ok) throw new Error(r.status);
+  const d = await r.json();
+  if(d.error) throw new Error(d.error);
+  return d.values||[];
+}
+
+async function sheetsAppend(sheet, linha){
+  /* Apps Script exige mode no-cors para POST — a resposta fica opaca mas a gravação funciona */
+  await fetch(CFG.APPS_SCRIPT_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify({ action: 'append', sheet, values: linha })
+  });
+  /* Com no-cors não conseguimos ler a resposta, mas se não lançou exceção gravou OK */
+}
+
+/* ══════════════════════════════════════════
+   SINCRONIZAÇÃO — lê a planilha ao iniciar
+══════════════════════════════════════════ */
+async function sincronizar(){
+  setSyncStatus('loading','Sincronizando com a planilha…');
+  if($('btn-sync')) $('btn-sync').disabled=true;
+
+  try {
+    /* Lê todas as 6 abas em paralelo — muito mais rápido que em sequência */
+    const ranges = [
+      ...CAPS.map(c => c.aba+'!A:R'),
+      'Rubrica!A:J'
+    ];
+    const resultados = await Promise.all(ranges.map(r => sheetsGet(r)));
+
+    /* Processa notas dos 5 capítulos */
+    for(let ci=0;ci<5;ci++){
+      resultados[ci].forEach(row=>{
+        if(row.length < 16) return;
+        const nome = String(row[1]||'').trim();
+        const nota = parseFloat(row[15]);
+        if(nome && !isNaN(nota) && EQUIPES[nome] !== undefined){
+          NOTAS_PROVA[ci][nome] = nota;
+        }
+      });
+    }
+
+    /* Processa rubricas */
+    resultados[5].forEach(row=>{
+      if(row.length < 9) return;
+      const nome = String(row[1]||'').trim();
+      const capTitulo = String(row[2]||'').trim();
+      const ci = CAPS.findIndex(c=>c.titulo===capTitulo);
+      if(nome && ci>=0 && EQUIPES[nome]!==undefined){
+        const d=parseFloat(row[3])||0, c=parseFloat(row[4])||0,
+              v=parseFloat(row[5])||0, p=parseFloat(row[6])||0,
+              pt=parseFloat(row[7])||0, total=parseFloat(row[8])||0,
+              obs=row[9]||'';
+        if(!RUBRICA[nome]) RUBRICA[nome]={};
+        RUBRICA[nome][ci]={d,c,v,p,pt,total,obs};
+      }
+    });
+
+    SYNC.ok=true; SYNC.ts=new Date();
+    const ts=SYNC.ts.toLocaleTimeString('pt-BR');
+    setSyncStatus('ok','Dados sincronizados · atualizado às '+ts);
+
+  } catch(e) {
+    SYNC.ok=false;
+    setSyncStatus('err','Não foi possível sincronizar com a planilha.');
+  }
+
+  if($('btn-sync')) $('btn-sync').disabled=false;
+}
+
+function setSyncStatus(tipo, txt){
+  ['tela-login','tela-prof'].forEach(tela=>{
+    const sfx = tela==='tela-prof' ? '-prof':'';
+    const el=$('sync-status'+sfx);
+    const etxt=$('sync-txt'+sfx);
+    if(!el) return;
+    el.className='sync-bar '+tipo;
+    if(etxt) etxt.textContent=txt;
+  });
+}
+
+/* ── INIT ── */
+function preencherSelects(){
+  NOMES.forEach(n=>{
+    [$('inp-nome'),$('sel-aluno-rub')].forEach(sel=>{
+      if(!sel) return; /* ignora se o elemento não existir na página */
+      const o=document.createElement('option');
+      o.value=o.textContent=n; sel.appendChild(o);
+    });
+  });
+  $('inp-nome').addEventListener('change', function(){
+    const sel=$('inp-cap');
+    sel.innerHTML='';
+    const nome=this.value;
+    if(!nome){
+      const o=document.createElement('option');
+      o.value=''; o.textContent='— selecione seu nome primeiro —';
+      sel.appendChild(o); return;
+    }
+    const eq=EQUIPES[nome]||0;
+    const labels=[
+      '22/05 · Capítulo 1 — Introdução',
+      '29/05 · Capítulo 2 — CPU',
+      '05/06 · Capítulo 3 — Unidade de Controle',
+      '12/06 · Capítulo 4 — Conjunto de Instruções',
+      '19/06 · Capítulo 5 — Sistema de Memória'
+    ];
+    const o0=document.createElement('option');
+    o0.value=''; o0.textContent='— selecione a prova do dia —';
+    sel.appendChild(o0);
+    for(let ci=0;ci<5;ci++){
+      if(CAPS[ci].equipe===eq) continue;
+      const o=document.createElement('option');
+      o.value=String(ci); o.textContent=labels[ci];
+      sel.appendChild(o);
+    }
+  });
+}
+
+function irParaLogin(){
+  ir('tela-login');
+}
+
+/* Aguarda o HTML carregar completamente antes de iniciar */
+document.addEventListener('DOMContentLoaded', function(){
+
+  preencherSelects();
+
+  /* Garante que o portal avança para login em no máximo 6 segundos */
+  const FAILSAFE = setTimeout(()=>{ irParaLogin(); }, 6000);
+
+  /* Tenta sincronizar em background — não bloqueia o login */
+  sincronizar()
+    .then(()=>{ clearTimeout(FAILSAFE); irParaLogin(); })
+    .catch(()=>{ clearTimeout(FAILSAFE); irParaLogin(); });
+
+});
+
+/* ── LOGIN ── */
+function showPerfil(p){ H('form-aluno'); H('form-prof'); Sh('form-'+p); }
+
+async function entrarAluno(){
+  const nome=$('inp-nome').value, mat=$('inp-mat').value.trim(), ci=$('inp-cap').value;
+  if(!nome||!mat||ci===''){alert('Preencha todos os campos.');return;}
+  ST.nome=nome; ST.mat=mat; ST.capIdx=parseInt(ci); ST.eq=EQUIPES[nome]||0;
+  const cap=CAPS[ST.capIdx];
+
+  if(ST.eq===cap.equipe){
+    $('ag-titulo').textContent='Você apresenta hoje — nada a fazer aqui!';
+    $('ag-texto').textContent='Você faz parte da Equipe '+ST.eq+', responsável pela apresentação do '+cap.titulo+'. Sua nota final será: (média das provas que seus colegas fizeram sobre este capítulo + nota da rubrica do professor) ÷ 2. Boa apresentação!';
+    $('ag-badge').innerHTML='<span class="badge bb">'+cap.titulo+' · '+cap.data+'</span>';
+    ir('tela-aguarda');
+    return;
+  }
+
+  /* Busca a prova do servidor — só vem se hoje for a data correta ou posterior */
+  const btn=$('btn-entrar');
+  if(btn){ btn.disabled=true; btn.textContent='Carregando prova…'; }
+  try {
+    const url=CFG.APPS_SCRIPT_URL+'?action=prova&capIdx='+ST.capIdx;
+    const r=await fetch(url);
+    const d=await r.json();
+    if(d.error){
+      alert(d.error);
+      if(btn){ btn.disabled=false; btn.textContent='Entrar →'; }
+      return;
+    }
+    PROVA_ATUAL=d;
+  } catch(e) {
+    alert('Não foi possível carregar a prova. Verifique sua conexão.');
+    if(btn){ btn.disabled=false; btn.textContent='Entrar →'; }
+    return;
+  }
+  if(btn){ btn.disabled=false; btn.textContent='Entrar →'; }
+
+  ST.resp=Array(10).fill(null); ST.qi=0;
+  ir('tela-prova');
+  $('p-titulo').textContent=cap.titulo;
+  $('p-info').textContent=nome+' · '+mat+' · '+cap.data;
+  renderQ(); startTimer();
+}
+
+async function entrarProf(){
+  const digitado = $('inp-senha').value;
+  if(!digitado){ alert('Digite a senha.'); return; }
+  // Gera o hash SHA-256 do que foi digitado e compara com o hash armazenado
+  const encoded = new TextEncoder().encode(digitado);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', encoded);
+  const hashHex = Array.from(new Uint8Array(hashBuffer))
+    .map(b => b.toString(16).padStart(2,'0')).join('');
+  if(hashHex !== CFG.SENHA_HASH){ alert('Senha incorreta.'); return; }
+  ir('tela-prof'); renderNotas();
+}
+
+/* ── PROVA ── */
+function renderQ(){
+  const q=PROVA_ATUAL.questoes[ST.qi],i=ST.qi;
+  let lbl='Questão '+(i+1)+' de 10';
+  /* nivel de dificuldade oculto dos alunos */
+  $('q-label').innerHTML=lbl; $('q-text').textContent=q.e;
+  const w=$('q-alts'); w.innerHTML='';
+  Object.entries(q.a).forEach(([l,t])=>{
+    const lb=document.createElement('label');
+    lb.className='alt'+(ST.resp[i]===l?' sel':'');
+    lb.innerHTML=`<input type="radio" name="alt" value="${l}"><span class="alt-l">${l}</span><span>${t}</span>`;
+    lb.addEventListener('click',()=>{ST.resp[i]=l;renderQ();});
+    w.appendChild(lb);
+  });
+  const nr=ST.resp.filter(r=>r!==null).length;
+  $('prog-q').textContent='Questão '+(i+1)+' de 10';
+  $('prog-r').textContent=nr+' respondida'+(nr!==1?'s':'');
+  $('prog-fill').style.width=(nr/10*100)+'%';
+  $('btn-ant').disabled=(i===0); $('btn-prox').disabled=(i===9);
+  ST.resp.every(r=>r!==null)?Sh('btn-submit'):H('btn-submit');
+  renderDots();
+}
+
+function renderDots(){
+  const w=$('q-dots'); w.innerHTML='';
+  for(let i=0;i<10;i++){
+    const d=document.createElement('div');
+    d.className='dot'+(ST.resp[i]!==null?' r':'')+(i===ST.qi?' cur':'');
+    d.textContent=i+1;
+    d.addEventListener('click',()=>{ST.qi=i;renderQ();});
+    w.appendChild(d);
+  }
+}
+
+function navQ(dir){ST.qi=Math.max(0,Math.min(9,ST.qi+dir));renderQ();}
+function confirmarEnvio(){if(confirm('Confirma o envio da prova? Esta ação não pode ser desfeita.'))finalizar();}
+
+function startTimer(){
+  ST.seg=CFG.TEMPO_MIN*60; tick();
+  ST.iv=setInterval(()=>{ST.seg--;tick();if(ST.seg<=0){clearInterval(ST.iv);alert('Tempo esgotado!');finalizar();}},1000);
+}
+function tick(){
+  const m=Math.floor(ST.seg/60),s=ST.seg%60,el=$('timer');
+  el.textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  el.className='timer'+(ST.seg<=60?' danger':ST.seg<=300?' warn':'');
+}
+
+function finalizar(){
+  clearInterval(ST.iv); ir('tela-resultado');
+  const qs=PROVA_ATUAL.questoes; let acertos=0;
+  const lista=$('gab-list'); lista.innerHTML='';
+  qs.forEach((q,i)=>{
+    const r=ST.resp[i],ok=r===q.g; if(ok) acertos++;
+    const li=document.createElement('li');
+    li.className='gab-item '+(ok?'ok':'nok');
+    li.innerHTML=`<span class="gab-icon">${ok?'✓':'✗'}</span>
+      <div class="gab-t"><strong>Q${i+1}</strong> —
+      Sua resposta: <strong>(${r||'—'})</strong> · Gabarito: <strong>(${q.g})</strong>
+      <div class="gab-j">${q.j}</div></div>`;
+    lista.appendChild(li);
+  });
+  const nota=acertos*5;
+  $('score-n').textContent=nota+' pts';
+  $('score-n').className='score-n '+(nota>=25?'ok':'nok');
+  $('score-s').textContent=acertos+' de 10 corretas · '+(nota>=25?'Aprovado':'Abaixo da média')+' · '+CAPS[ST.capIdx].titulo;
+  NOTAS_PROVA[ST.capIdx][ST.nome]=nota;
+  enviarSheets(nota,acertos);
+}
+
+async function enviarSheets(nota,acertos){
+  const el=$('msg-envio'),cap=CAPS[ST.capIdx];
+
+  const gasto=CFG.TEMPO_MIN*60-ST.seg;
+  const linha=[new Date().toLocaleString('pt-BR'),ST.nome,ST.mat,cap.titulo,
+    ...ST.resp.map(r=>r||'-'),acertos,nota,
+    Math.floor(gasto/60)+'min '+(gasto%60)+'s'];
+  try{
+    await sheetsAppend(cap.aba,linha);
+    el.textContent='✓ Resultado enviado ao professor com sucesso.'; el.className='msg ok';
+  }catch(e){
+    el.textContent='✗ Não foi possível enviar. Informe ao professor: '+nota+' pts.'; el.className='msg err';
+  }
+}
+
+/* ── ABAS ── */
+function mudarAba(aba,btn){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if(aba==='rubrica'){Sh('aba-rubrica');H('aba-notas');}
+  else{H('aba-rubrica');Sh('aba-notas');renderNotas();}
+}
+
+/* ── RUBRICA POR EQUIPE ── */
+function carregarEquipe(){
+  const eq=parseInt($('sel-eq-rub').value);
+  if(!eq){ H('rubrica-equipe-wrap'); return; }
+  const ci=eq-1, cap=CAPS[ci];
+
+  // Info do topo
+  const qt=Object.keys(NOTAS_PROVA[ci]).filter(n=>EQUIPES[n]!==eq).length;
+  const mt=mediaTurmaCap(ci);
+  $('rub-eq-info').innerHTML=
+    '<strong>'+cap.titulo+'</strong> · '+cap.data+
+    '<br>Provas computadas pelos outros alunos: <strong>'+qt+'</strong>'+
+    (mt!==null?' · Média atual da turma: <strong>'+mt.toFixed(1)+' pts</strong>':' (nenhuma ainda)');
+
+  // Monta um card por aluno da equipe
+  const membros=NOMES.filter(n=>EQUIPES[n]===eq);
+  const wrap=$('rubrica-cards'); wrap.innerHTML='';
+
+  membros.forEach(nome=>{
+    const r=RUBRICA[nome]?.[ci]||{};
+    const nomeCurto=nome.split(' ').slice(0,2).join(' ');
+    const card=document.createElement('div');
+    card.style.cssText='border:1px solid var(--border);border-radius:var(--rs);padding:1rem;margin-bottom:1rem;background:var(--white)';
+    card.innerHTML=`
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">
+        <div style="font-size:.92rem;font-weight:500">${nome}</div>
+        <span class="badge bg" style="font-size:10px">E${eq}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:.6rem">
+        <div>
+          <div style="font-size:.75rem;color:var(--ink3);margin-bottom:.2rem">Domínio do conteúdo (0–20)</div>
+          <input type="number" data-nome="${nome}" data-campo="d" min="0" max="20" placeholder="0"
+            value="${r.d||''}"
+            style="width:100%;padding:.4rem .6rem;font-size:.9rem;font-family:DM Mono,monospace;border:1px solid var(--border);border-radius:var(--rs);text-align:center;background:var(--surface);outline:none"
+            oninput="updTotalCard(this)">
+        </div>
+        <div>
+          <div style="font-size:.75rem;color:var(--ink3);margin-bottom:.2rem">Clareza e organização (0–10)</div>
+          <input type="number" data-nome="${nome}" data-campo="c" min="0" max="10" placeholder="0"
+            value="${r.c||''}"
+            style="width:100%;padding:.4rem .6rem;font-size:.9rem;font-family:DM Mono,monospace;border:1px solid var(--border);border-radius:var(--rs);text-align:center;background:var(--surface);outline:none"
+            oninput="updTotalCard(this)">
+        </div>
+        <div>
+          <div style="font-size:.75rem;color:var(--ink3);margin-bottom:.2rem">Recursos visuais (0–10)</div>
+          <input type="number" data-nome="${nome}" data-campo="v" min="0" max="10" placeholder="0"
+            value="${r.v||''}"
+            style="width:100%;padding:.4rem .6rem;font-size:.9rem;font-family:DM Mono,monospace;border:1px solid var(--border);border-radius:var(--rs);text-align:center;background:var(--surface);outline:none"
+            oninput="updTotalCard(this)">
+        </div>
+        <div>
+          <div style="font-size:.75rem;color:var(--ink3);margin-bottom:.2rem">Postura e comunicação (0–10)</div>
+          <input type="number" data-nome="${nome}" data-campo="p" min="0" max="10" placeholder="0"
+            value="${r.p||''}"
+            style="width:100%;padding:.4rem .6rem;font-size:.9rem;font-family:DM Mono,monospace;border:1px solid var(--border);border-radius:var(--rs);text-align:center;background:var(--surface);outline:none"
+            oninput="updTotalCard(this)">
+        </div>
+        <div>
+          <div style="font-size:.75rem;color:var(--ink3);margin-bottom:.2rem">Participação individual (0–10)</div>
+          <input type="number" data-nome="${nome}" data-campo="pt" min="0" max="10" placeholder="0"
+            value="${r.pt||''}"
+            style="width:100%;padding:.4rem .6rem;font-size:.9rem;font-family:DM Mono,monospace;border:1px solid var(--border);border-radius:var(--rs);text-align:center;background:var(--surface);outline:none"
+            oninput="updTotalCard(this)">
+        </div>
+        <div style="display:flex;flex-direction:column;justify-content:flex-end">
+          <div style="font-size:.75rem;color:var(--ink3);margin-bottom:.2rem">Total</div>
+          <div id="total-${nome.replace(/ /g,'_')}"
+            style="padding:.4rem .6rem;background:var(--gl);border-radius:var(--rs);text-align:center;font-family:DM Mono,monospace;font-weight:500;color:var(--gd);font-size:.95rem">
+            ${r.total!==undefined?r.total.toFixed(0)+' pts':'— pts'}
+          </div>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:.75rem;color:var(--ink3);margin-bottom:.2rem">Observações (opcional)</div>
+        <textarea data-nome="${nome}" data-campo="obs"
+          style="width:100%;padding:.4rem .6rem;font-size:.85rem;font-family:inherit;border:1px solid var(--border);border-radius:var(--rs);background:var(--surface);resize:vertical;min-height:48px;outline:none"
+          placeholder="Comentários sobre a apresentação deste aluno…">${r.obs||''}</textarea>
+      </div>`;
+    wrap.appendChild(card);
+  });
+
+  Sh('rubrica-equipe-wrap');
+  H('msg-rub');
+}
+
+function updTotalCard(input){
+  const nome=input.dataset.nome;
+  const maximos={'d':20,'c':10,'v':10,'p':10,'pt':10};
+  let total=0;
+  /* Busca todos os inputs deste aluno pelo data-nome */
+  const todos=document.querySelectorAll(`input[type=number][data-nome="${nome}"]`);
+  todos.forEach(inp=>{
+    const max=maximos[inp.dataset.campo]||10;
+    total+=Math.min(parseFloat(inp.value)||0,max);
+  });
+  const el=$('total-'+nome.replace(/ /g,'_'));
+  if(el) el.textContent=total.toFixed(0)+' pts';
+}
+
+async function salvarEquipe(){
+  const eq=parseInt($('sel-eq-rub').value);
+  if(!eq) return;
+  const ci=eq-1;
+  const membros=NOMES.filter(n=>EQUIPES[n]===eq);
+  const btn=$('btn-salvar-equipe');
+  const msg=$('msg-rub');
+  btn.disabled=true;
+  msg.textContent='Salvando…'; msg.className='msg'; Sh('msg-rub');
+
+  const maximos={'d':20,'c':10,'v':10,'p':10,'pt':10};
+  let salvos=0, erros=0;
+
+  for(const nome of membros){
+    const card=[...$('rubrica-cards').children].find(c=>c.querySelector(`[data-nome="${nome}"]`));
+    if(!card) continue;
+    const vals={};
+    card.querySelectorAll('input[type=number]').forEach(inp=>{
+      const campo=inp.dataset.campo;
+      vals[campo]=Math.min(parseFloat(inp.value)||0,maximos[campo]||10);
+    });
+    const obs=card.querySelector('textarea')?.value?.trim()||'';
+    const total=(vals.d||0)+(vals.c||0)+(vals.v||0)+(vals.p||0)+(vals.pt||0);
+    if(!RUBRICA[nome]) RUBRICA[nome]={};
+    RUBRICA[nome][ci]={...vals,total,obs};
+    try{
+      await sheetsAppend('Rubrica',[
+        new Date().toLocaleString('pt-BR'),nome,CAPS[ci].titulo,
+        vals.d,vals.c,vals.v,vals.p,vals.pt,total,obs
+      ]);
+      salvos++;
+    }catch(e){ erros++; }
+  }
+
+  btn.disabled=false;
+  if(erros===0){
+    msg.textContent='✓ Rubricas da Equipe '+eq+' salvas com sucesso ('+salvos+' alunos).';
+    msg.className='msg ok';
+  } else {
+    msg.textContent='⚠ '+salvos+' salvas. '+erros+' erro(s) ao gravar na planilha — verifique a API Key.';
+    msg.className='msg err';
+  }
+  setTimeout(()=>H('msg-rub'),4000);
+  renderNotas();
+}
+
+/* funções legadas mantidas para não quebrar nada */
+function carregarRubrica(){}
+function updTotal(){}
+async function salvarRubrica(){}
+
+/* ── CÁLCULOS ── */
+function mediaTurmaCap(ci){
+  const eq=CAPS[ci].equipe;
+  const vals=Object.entries(NOTAS_PROVA[ci])
+    .filter(([n])=>EQUIPES[n]!==eq).map(([,v])=>v);
+  return vals.length>0 ? vals.reduce((a,b)=>a+b,0)/vals.length : null;
+}
+
+/* ── TABELA NOTAS ── */
+function renderNotas(){
+  const filEq=$('fil-eq').value;
+  const tbody=$('tbody-notas'); tbody.innerHTML='';
+  const cores=['bg','bp','ba','bb','br'];
+  NOMES.forEach(nome=>{
+    const eq=EQUIPES[nome]||0;
+    if(filEq&&parseInt(filEq)!==eq) return;
+    const ci=eq-1, cap=CAPS[ci];
+    const media=mediaTurmaCap(ci);
+    const rub=RUBRICA[nome]?.[ci];
+    const notaRub=rub?rub.total:null;
+    let nf=null;
+    if(media!==null&&notaRub!==null) nf=(media+notaRub)/2;
+    const qt=Object.keys(NOTAS_PROVA[ci]).filter(n=>EQUIPES[n]!==eq).length;
+    const nomeCurto=nome.split(' ').slice(0,2).join(' ');
+    const mStr=media!==null?media.toFixed(1):'<span style="color:var(--ink3)">—</span>';
+    const rStr=notaRub!==null?notaRub.toFixed(0):'<span style="color:var(--ink3)">—</span>';
+    const nfHtml=nf!==null
+      ?`<span class="nf ${nf>=25?'ok':'nok'}">${nf.toFixed(1)}</span>`
+      :'<span class="nf nd">—</span>';
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td>${nomeCurto}</td>
+      <td><span class="badge ${cores[eq-1]} eq-chip">E${eq}</span></td>
+      <td style="font-size:.81rem">${cap.titulo.split(' — ')[1]}</td>
+      <td class="nc">${qt}</td>
+      <td class="nc">${mStr}</td>
+      <td class="nc">${rStr}</td>
+      <td>${nfHtml}</td>`;
+    tbody.appendChild(tr);
+  });
+  if(!tbody.children.length){
+    const tr=document.createElement('tr');
+    tr.innerHTML='<td colspan="7" style="text-align:center;padding:1.5rem;color:var(--ink3);font-size:.88rem">Nenhuma nota registrada ainda.</td>';
+    tbody.appendChild(tr);
+  }
+}
+
+/* ── EXPORTAR CSV ── */
+function exportCSV(){
+  let csv='Aluno,Equipe,Capítulo apresentado,Provas computadas,Média da turma,Rubrica prof,Nota final\n';
+  NOMES.forEach(nome=>{
+    const eq=EQUIPES[nome]||0, ci=eq-1, cap=CAPS[ci];
+    const media=mediaTurmaCap(ci);
+    const rub=RUBRICA[nome]?.[ci];
+    const nRub=rub?rub.total:null;
+    const nf=media!==null&&nRub!==null?((media+nRub)/2).toFixed(1):'';
+    const qt=Object.keys(NOTAS_PROVA[ci]).filter(n=>EQUIPES[n]!==eq).length;
+    csv+=`"${nome}",${eq},"${cap.titulo}",${qt},`+
+      (media!==null?media.toFixed(1):'')+','+(nRub!==null?nRub.toFixed(0):'')+','+nf+'\n';
+  });
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='notas_ADS13.csv'; a.click();
+}
+</script>
+</body>
+</html>
