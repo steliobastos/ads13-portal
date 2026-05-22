@@ -310,7 +310,7 @@ let SYNC = {ok:false, ts:null, erros:[]};
   <div id="aba-notas" class="hidden">
     <div class="info-box">
       <strong>Como a nota final é calculada:</strong><br>
-      Nota final = (média das provas dos colegas sobre o capítulo apresentado + rubrica do professor) ÷ 2.<br>
+      Nota final = média das provas dos colegas sobre o capítulo apresentado (0–50) + rubrica do professor (0–50). Máximo = 100 pts.<br>
       Nenhum aluno faz a prova do próprio capítulo — cada aluno faz 4 provas que compõem as notas dos outros.
     </div>
     <div class="sel-row">
@@ -612,8 +612,8 @@ function finalizar(){
   });
   const nota=acertos*5;
   $('score-n').textContent=nota+' pts';
-  $('score-n').className='score-n '+(nota>=25?'ok':'nok');
-  $('score-s').textContent=acertos+' de 10 corretas · '+(nota>=25?'Aprovado':'Abaixo da média')+' · '+CAPS[ST.capIdx].titulo;
+  $('score-n').className='score-n '+(nota>=50?'ok':'nok');
+  $('score-s').textContent=acertos+' de 10 corretas · '+(nota>=50?'Aprovado':'Abaixo da média')+' · '+CAPS[ST.capIdx].titulo;
   NOTAS_PROVA[ST.capIdx][ST.nome]=nota;
   enviarSheets(nota,acertos);
 }
@@ -742,8 +742,8 @@ function carregarEquipe(){
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:.6rem">
         <div>
-          <div style="font-size:.75rem;color:var(--ink3);margin-bottom:.2rem">Domínio do conteúdo (0–20)</div>
-          <input type="number" data-nome="${nome}" data-campo="d" min="0" max="20" placeholder="0"
+          <div style="font-size:.75rem;color:var(--ink3);margin-bottom:.2rem">Domínio do conteúdo (0–10)</div>
+          <input type="number" data-nome="${nome}" data-campo="d" min="0" max="10" placeholder="0"
             value="${r.d||''}"
             style="width:100%;padding:.4rem .6rem;font-size:.9rem;font-family:DM Mono,monospace;border:1px solid var(--border);border-radius:var(--rs);text-align:center;background:var(--surface);outline:none"
             oninput="updTotalCard(this)">
@@ -799,7 +799,7 @@ function carregarEquipe(){
 
 function updTotalCard(input){
   const nome=input.dataset.nome;
-  const maximos={'d':20,'c':10,'v':10,'p':10,'pt':10};
+  const maximos={'d':10,'c':10,'v':10,'p':10,'pt':10};
   let total=0;
   /* Busca todos os inputs deste aluno pelo data-nome */
   const todos=document.querySelectorAll(`input[type=number][data-nome="${nome}"]`);
@@ -821,7 +821,7 @@ async function salvarEquipe(){
   btn.disabled=true;
   msg.textContent='Salvando…'; msg.className='msg'; Sh('msg-rub');
 
-  const maximos={'d':20,'c':10,'v':10,'p':10,'pt':10};
+  const maximos={'d':10,'c':10,'v':10,'p':10,'pt':10};
   let salvos=0, erros=0;
 
   for(const nome of membros){
@@ -883,13 +883,13 @@ function renderNotas(){
     const rub=RUBRICA[nome]?.[ci];
     const notaRub=rub?rub.total:null;
     let nf=null;
-    if(media!==null&&notaRub!==null) nf=(media+notaRub)/2;
+    if(media!==null&&notaRub!==null) nf=media+notaRub; /* prova(50)+rubrica(50)=100 max */
     const qt=Object.keys(NOTAS_PROVA[ci]).filter(n=>EQUIPES[n]!==eq).length;
     const nomeCurto=nome.split(' ').slice(0,2).join(' ');
     const mStr=media!==null?media.toFixed(1):'<span style="color:var(--ink3)">—</span>';
     const rStr=notaRub!==null?notaRub.toFixed(0):'<span style="color:var(--ink3)">—</span>';
     const nfHtml=nf!==null
-      ?`<span class="nf ${nf>=25?'ok':'nok'}">${nf.toFixed(1)}</span>`
+      ?`<span class="nf ${nf>=50?'ok':'nok'}">${nf.toFixed(1)}</span>`
       :'<span class="nf nd">—</span>';
     const tr=document.createElement('tr');
     tr.innerHTML=`
@@ -917,7 +917,7 @@ function exportCSV(){
     const media=mediaTurmaCap(ci);
     const rub=RUBRICA[nome]?.[ci];
     const nRub=rub?rub.total:null;
-    const nf=media!==null&&nRub!==null?((media+nRub)/2).toFixed(1):'';
+    const nf=media!==null&&nRub!==null?(media+nRub).toFixed(1):'';
     const qt=Object.keys(NOTAS_PROVA[ci]).filter(n=>EQUIPES[n]!==eq).length;
     csv+=`"${nome}",${eq},"${cap.titulo}",${qt},`+
       (media!==null?media.toFixed(1):'')+','+(nRub!==null?nRub.toFixed(0):'')+','+nf+'\n';
