@@ -273,12 +273,20 @@ let SYNC = {ok:false, ts:null, erros:[]};
     <span id="sync-txt-prof">Dados sincronizados com a planilha.</span>
   </div>
   <div class="tabs">
-    <button class="tab-btn active" onclick="mudarAba('rubrica',this)">Rubrica dos seminários</button>
+    <button class="tab-btn active" onclick="mudarAba('controle',this)">Controle de provas</button>
+    <button class="tab-btn"        onclick="mudarAba('rubrica',this)">Rubrica dos seminários</button>
     <button class="tab-btn"        onclick="mudarAba('notas',this)">Notas consolidadas</button>
   </div>
 
+  <!-- ABA CONTROLE DE PROVAS -->
+  <div id="aba-controle">
+    <div class="info-box">Use os botões abaixo para <strong>abrir e fechar</strong> as provas conforme o ritmo da sua aula. Os alunos só conseguem iniciar a prova quando ela estiver aberta — mesmo que estejam logados.</div>
+    <div id="controle-cards"></div>
+    <div class="msg hidden" id="msg-controle"></div>
+  </div>
+
   <!-- ABA RUBRICA -->
-  <div id="aba-rubrica">
+  <div id="aba-rubrica" class="hidden">
     <div class="info-box">Selecione a equipe para ver todos os alunos e preencher as rubricas de uma vez. A nota do seminário vale 50% da nota final de cada aluno.</div>
     <div class="sel-row">
       <select id="sel-eq-rub" onchange="carregarEquipe()">
@@ -538,7 +546,7 @@ async function entrarProf(){
   const hashHex = Array.from(new Uint8Array(hashBuffer))
     .map(b => b.toString(16).padStart(2,'0')).join('');
   if(hashHex !== CFG.SENHA_HASH){ alert('Senha incorreta.'); return; }
-  ir('tela-prof'); renderNotas();
+  ir('tela-prof'); renderControle();
 }
 
 /* ── PROVA ── */
@@ -629,8 +637,79 @@ async function enviarSheets(nota,acertos){
 function mudarAba(aba,btn){
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  if(aba==='rubrica'){Sh('aba-rubrica');H('aba-notas');}
-  else{H('aba-rubrica');Sh('aba-notas');renderNotas();}
+  ['aba-controle','aba-rubrica','aba-notas'].forEach(id=>H(id));
+  Sh('aba-'+aba);
+  if(aba==='controle') renderControle();
+  if(aba==='notas') renderNotas();
+}
+
+
+/* ── CONTROLE DE PROVAS ── */
+let STATUS_PROVAS = [false,false,false,false,false];
+
+async function buscarStatus(){
+  try {
+    const r = await fetch(CFG.APPS_SCRIPT_URL+'?action=status');
+    const d = await r.json();
+    if(d.status) STATUS_PROVAS = d.status;
+  } catch(e) { /* ignora */ }
+}
+
+async function renderControle(){
+  const wrap = $('controle-cards');
+  wrap.innerHTML = '<div style="text-align:center;padding:1rem;color:var(--ink3);font-size:.85rem">Carregando status…</div>';
+  await buscarStatus();
+  wrap.innerHTML = '';
+  CAPS.forEach((cap, ci) => {
+    const aberta = STATUS_PROVAS[ci];
+    const hoje = new Date(); hoje.setHours(0,0,0,0);
+    const partes = cap.data.split('/'); // DD/MM/YYYY
+    const dataProva = new Date(parseInt(partes[2]), parseInt(partes[1])-1, parseInt(partes[0]));
+    const dataPassou = hoje >= dataProva;
+
+    const card = document.createElement('div');
+    card.style.cssText = 'border:1px solid var(--border);border-radius:var(--rs);padding:1rem 1.25rem;margin-bottom:.75rem;background:var(--white);display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap';
+    card.innerHTML = `
+      <div style="flex:1;min-width:200px">
+        <div style="font-size:.92rem;font-weight:500;margin-bottom:.2rem">${cap.titulo}</div>
+        <div style="font-size:.78rem;color:var(--ink3)">${cap.data} · Equipe ${cap.equipe}</div>
+        ${!dataPassou ? '<div style="font-size:.75rem;color:var(--amber);margin-top:.2rem">⚠ Data ainda não chegou — só pode abrir a partir de '+cap.data+'</div>' : ''}
+      </div>
+      <div style="display:flex;gap:.5rem;align-items:center">
+        <span style="font-size:.82rem;font-weight:500;color:${aberta?'var(--green)':'var(--ink3)'};min-width:60px;text-align:right">
+          ${aberta ? '✓ Aberta' : '⊘ Fechada'}
+        </span>
+        <button onclick="alternarProva(${ci})"
+          ${!dataPassou ? 'disabled' : ''}
+          style="padding:.5rem 1rem;font-size:.82rem;font-weight:500;font-family:inherit;border:none;border-radius:var(--rs);cursor:pointer;
+                 background:${aberta?'var(--danger)':'var(--green)'};color:#fff;
+                 ${!dataPassou?'opacity:.4;cursor:not-allowed':''}">
+          ${aberta ? 'Fechar prova' : 'Abrir prova'}
+        </button>
+      </div>`;
+    wrap.appendChild(card);
+  });
+}
+
+async function alternarProva(ci){
+  const novoEstado = !STATUS_PROVAS[ci];
+  const msg = $('msg-controle');
+  msg.textContent = 'Atualizando…'; msg.className = 'msg'; Sh('msg-controle');
+  try {
+    await fetch(CFG.APPS_SCRIPT_URL, {
+      method: 'POST', mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'setStatus', capIdx: ci, aberta: novoEstado })
+    });
+    STATUS_PROVAS[ci] = novoEstado;
+    renderControle();
+    msg.textContent = '✓ Prova do ' + CAPS[ci].titulo + (novoEstado?' aberta':' fechada') + ' com sucesso.';
+    msg.className = 'msg ok';
+    setTimeout(()=>H('msg-controle'), 3000);
+  } catch(e) {
+    msg.textContent = '✗ Erro ao atualizar o status.';
+    msg.className = 'msg err';
+  }
 }
 
 /* ── RUBRICA POR EQUIPE ── */
