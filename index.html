@@ -176,7 +176,7 @@ const CAPS = [
   {titulo:"Capítulo 3 — Unidade de Controle",    data:"05/06/2026",aba:"Cap3",equipe:3},
   {titulo:"Capítulo 4 — Conjunto de Instruções", data:"12/06/2026",aba:"Cap4",equipe:4},
   {titulo:"Capítulo 5 — Sistema de Memória",     data:"19/06/2026",aba:"Cap5",equipe:5},
-  {titulo:"Prova Final — Todos os Capítulos",    data:"26/06/2026",aba:"Final",equipe:0},
+  {titulo:"Prova Final",                          data:"30/06/2026",aba:"Final",equipe:0},
 ];
 
 let PROVA_ATUAL = null; /* Carregada do Apps Script só quando o aluno inicia a prova */
@@ -350,7 +350,7 @@ let SYNC = {ok:false, ts:null, erros:[]};
   <!-- ABA PROVA FINAL -->
   <div id="aba-final" class="hidden">
     <div class="info-box">
-      Resultados da <strong>Prova Final</strong> (26/06/2026) — avaliação individual cobrindo todos os capítulos.
+      Resultados da <strong>Prova Final</strong> (30/06/2026).
       Nota exibida de 0 a 100 pts (15 questões × 6,67 pts cada).
     </div>
     <div class="table-wrap">
@@ -495,7 +495,7 @@ function preencherSelects(){
       '05/06 · Capítulo 3 — Unidade de Controle',
       '12/06 · Capítulo 4 — Conjunto de Instruções',
       '19/06 · Capítulo 5 — Sistema de Memória',
-      '26/06 · Prova Final — Todos os Capítulos'
+      '30/06 · Prova Final'
     ];
     const o0=document.createElement('option');
     o0.value=''; o0.textContent='— selecione a prova do dia —';
