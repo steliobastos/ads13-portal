@@ -141,7 +141,7 @@ tbody tr:hover td{background:var(--surface)}
 const CFG = {
   APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbwBmn90wdjKhnkjAyNu8RaYrlruEPMlZ29G3HiRcDhVSe8QFRhRwn0kIOd0DtX6-mwv/exec",
   TEMPO_MIN: 30,
-  SENHA_HASH: "01e59ae87cc2f38f218c000e120435de3f1e20120d2dc65b1beb36fda101a5b8", // SHA-256 de "ads13sem"
+  SENHA_HASH: "01e59ae87cc2f38f218c000e120435de3f1e20120d2dc65b1beb36fda101a5b8", // SHA-256 da senha do professor
 };
 
 /* Equipes */
@@ -560,6 +560,11 @@ async function entrarAluno(){
       if(btn){ btn.disabled=false; btn.textContent='Entrar →'; }
       return;
     }
+    if(!d.questoes || !Array.isArray(d.questoes) || d.questoes.length===0){
+      alert('Erro ao carregar a prova: o servidor não retornou as questões. Tente novamente ou avise o professor.\n\nDetalhes: ' + JSON.stringify(d));
+      if(btn){ btn.disabled=false; btn.textContent='Entrar →'; }
+      return;
+    }
     PROVA_ATUAL=d;
   } catch(e) {
     alert('Não foi possível carregar a prova. Verifique sua conexão.');
@@ -589,6 +594,7 @@ async function entrarProf(){
 
 /* ── PROVA ── */
 function renderQ(){
+  if(!PROVA_ATUAL || !PROVA_ATUAL.questoes){ console.error('PROVA_ATUAL invalida:', PROVA_ATUAL); return; }
   const q=PROVA_ATUAL.questoes[ST.qi],i=ST.qi;
   let lbl='Questão '+(i+1)+' de 10';
   /* nivel de dificuldade oculto dos alunos */
