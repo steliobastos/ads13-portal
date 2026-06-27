@@ -163,18 +163,26 @@ const EQUIPES = {
 };
 const NOMES = Object.keys(EQUIPES).sort();
 
+/* Alunos autorizados a fazer a Prova Final */
+const ALUNOS_PROVA_FINAL = [
+  "Gabriela Santiago Alves",
+  "João Ricardo da Silva Sousa",
+  "Luiz Ribeiro Barros Netto",
+];
+
 const CAPS = [
   {titulo:"Capítulo 1 — Introdução",            data:"22/05/2026",aba:"Cap1",equipe:1},
   {titulo:"Capítulo 2 — CPU",                    data:"29/05/2026",aba:"Cap2",equipe:2},
   {titulo:"Capítulo 3 — Unidade de Controle",    data:"05/06/2026",aba:"Cap3",equipe:3},
   {titulo:"Capítulo 4 — Conjunto de Instruções", data:"12/06/2026",aba:"Cap4",equipe:4},
   {titulo:"Capítulo 5 — Sistema de Memória",     data:"19/06/2026",aba:"Cap5",equipe:5},
+  {titulo:"Prova Final — Todos os Capítulos",    data:"26/06/2026",aba:"Final",equipe:0},
 ];
 
 let PROVA_ATUAL = null; /* Carregada do Apps Script só quando o aluno inicia a prova */
 
 /* Estado da sessão */
-let NOTAS_PROVA = {0:{},1:{},2:{},3:{},4:{}};
+let NOTAS_PROVA = {0:{},1:{},2:{},3:{},4:{},5:{}};
 let RUBRICA = {};
 let ST = {capIdx:null,qi:0,resp:[],nome:'',mat:'',eq:0,iv:null,seg:0};
 let SYNC = {ok:false, ts:null, erros:[]};
@@ -384,8 +392,8 @@ async function sincronizar(){
     ];
     const resultados = await Promise.all(ranges.map(r => sheetsGet(r)));
 
-    /* Processa notas dos 5 capítulos */
-    for(let ci=0;ci<5;ci++){
+    /* Processa notas dos 6 capítulos (inclui Prova Final) */
+    for(let ci=0;ci<6;ci++){
       resultados[ci].forEach(row=>{
         if(row.length < 16) return;
         const nome = String(row[1]||'').trim();
@@ -397,7 +405,7 @@ async function sincronizar(){
     }
 
     /* Processa rubricas */
-    resultados[5].forEach(row=>{
+    resultados[6].forEach(row=>{
       if(row.length < 9) return;
       const nome = String(row[1]||'').trim();
       const capTitulo = String(row[2]||'').trim();
@@ -459,13 +467,16 @@ function preencherSelects(){
       '29/05 · Capítulo 2 — CPU',
       '05/06 · Capítulo 3 — Unidade de Controle',
       '12/06 · Capítulo 4 — Conjunto de Instruções',
-      '19/06 · Capítulo 5 — Sistema de Memória'
+      '19/06 · Capítulo 5 — Sistema de Memória',
+      '26/06 · Prova Final — Todos os Capítulos'
     ];
     const o0=document.createElement('option');
     o0.value=''; o0.textContent='— selecione a prova do dia —';
     sel.appendChild(o0);
-    for(let ci=0;ci<5;ci++){
-      if(CAPS[ci].equipe===eq) continue;
+    for(let ci=0;ci<CAPS.length;ci++){
+      if(CAPS[ci].equipe===eq) continue; /* pula cap da própria equipe */
+      /* Prova Final (índice 5): só aparece para alunos autorizados */
+      if(ci===5 && !ALUNOS_PROVA_FINAL.includes(nome)) continue;
       const o=document.createElement('option');
       o.value=String(ci); o.textContent=labels[ci];
       sel.appendChild(o);
@@ -513,7 +524,8 @@ async function entrarAluno(){
   const btn=$('btn-entrar');
   if(btn){ btn.disabled=true; btn.textContent='Carregando prova…'; }
   try {
-    const url=CFG.APPS_SCRIPT_URL+'?action=prova&capIdx='+ST.capIdx;
+    /* Envia o nome do aluno para validação server-side da Prova Final */
+    const url=CFG.APPS_SCRIPT_URL+'?action=prova&capIdx='+ST.capIdx+'&nome='+encodeURIComponent(ST.nome);
     const r=await fetch(url);
     const d=await r.json();
     if(d.error){
@@ -609,10 +621,13 @@ function finalizar(){
       <div class="gab-j">${q.j}</div></div>`;
     lista.appendChild(li);
   });
-  const nota=acertos*5;
+  const totalQ = PROVA_ATUAL.questoes.length;
+  const ptsPorQ = totalQ === 15 ? (100/15) : 5;
+  const nota = parseFloat((acertos * ptsPorQ).toFixed(1));
+  const notaMax = totalQ === 15 ? 100 : 50;
   $('score-n').textContent=nota+' pts';
-  $('score-n').className='score-n '+(nota>=50?'ok':'nok');
-  $('score-s').textContent=acertos+' de 10 corretas · '+(nota>=50?'Aprovado':'Abaixo da média')+' · '+CAPS[ST.capIdx].titulo;
+  $('score-n').className='score-n '+(nota>=(notaMax/2)?'ok':'nok');
+  $('score-s').textContent=acertos+' de '+totalQ+' corretas · '+(nota>=(notaMax/2)?'Aprovado':'Abaixo da média')+' · '+CAPS[ST.capIdx].titulo;
   NOTAS_PROVA[ST.capIdx][ST.nome]=nota;
   enviarSheets(nota,acertos);
 }
