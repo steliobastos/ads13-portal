@@ -283,6 +283,7 @@ let SYNC = {ok:false, ts:null, erros:[]};
     <button class="tab-btn active" onclick="mudarAba('controle',this)">Controle de provas</button>
     <button class="tab-btn"        onclick="mudarAba('rubrica',this)">Rubrica dos seminários</button>
     <button class="tab-btn"        onclick="mudarAba('notas',this)">Notas consolidadas</button>
+    <button class="tab-btn"        onclick="mudarAba('final',this)">Prova Final</button>
   </div>
 
   <!-- ABA CONTROLE DE PROVAS -->
@@ -343,7 +344,33 @@ let SYNC = {ok:false, ts:null, erros:[]};
         <tbody id="tbody-notas"></tbody>
       </table>
     </div>
+    <div class="msg hidden" id="msg-notas"></div>
   </div>
+
+  <!-- ABA PROVA FINAL -->
+  <div id="aba-final" class="hidden">
+    <div class="info-box">
+      Resultados da <strong>Prova Final</strong> (26/06/2026) — avaliação individual cobrindo todos os capítulos.
+      Nota exibida de 0 a 100 pts (15 questões × 6,67 pts cada).
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Aluno</th>
+            <th>Acertos</th>
+            <th>Nota (0–100)</th>
+            <th>Situação</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-final"></tbody>
+      </table>
+    </div>
+    <div style="margin-top:.75rem;font-size:.8rem;color:var(--ink3)">
+      Resultados atualizados conforme os alunos finalizam. Use <strong>↻ Sincronizar</strong> para atualizar.
+    </div>
+  </div>
+
 </div>
 
 <script>
@@ -651,10 +678,11 @@ async function enviarSheets(nota,acertos){
 function mudarAba(aba,btn){
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  ['aba-controle','aba-rubrica','aba-notas'].forEach(id=>H(id));
+  ['aba-controle','aba-rubrica','aba-notas','aba-final'].forEach(id=>H(id));
   Sh('aba-'+aba);
   if(aba==='controle') renderControle();
   if(aba==='notas') renderNotas();
+  if(aba==='final') renderFinal();
 }
 
 
@@ -921,6 +949,36 @@ function renderNotas(){
     tr.innerHTML='<td colspan="7" style="text-align:center;padding:1.5rem;color:var(--ink3);font-size:.88rem">Nenhuma nota registrada ainda.</td>';
     tbody.appendChild(tr);
   }
+}
+
+/* ── PROVA FINAL ── */
+function renderFinal(){
+  const tbody = $('tbody-final');
+  tbody.innerHTML = '';
+
+  ALUNOS_PROVA_FINAL.forEach(nome => {
+    const notaBruta = NOTAS_PROVA[5][nome];
+    const tr = document.createElement('tr');
+
+    if(notaBruta !== undefined){
+      /* nota bruta = acertos * (100/15) */
+      const acertos = Math.round(notaBruta / (100/15));
+      const nota = parseFloat(notaBruta.toFixed(1));
+      const aprovado = nota >= 50;
+      tr.innerHTML = `
+        <td>${nome}</td>
+        <td class="nc">${acertos} / 15</td>
+        <td class="nc" style="font-family:'DM Mono',monospace;font-weight:600;font-size:.95rem;color:${aprovado?'var(--green)':'var(--danger)'}">${nota}</td>
+        <td><span class="badge ${aprovado?'bg':'br'}">${aprovado?'Aprovado':'Abaixo da média'}</span></td>`;
+    } else {
+      tr.innerHTML = `
+        <td>${nome}</td>
+        <td class="nc" style="color:var(--ink3)">—</td>
+        <td class="nc" style="color:var(--ink3)">—</td>
+        <td><span class="badge" style="background:var(--surface);color:var(--ink3)">Aguardando</span></td>`;
+    }
+    tbody.appendChild(tr);
+  });
 }
 
 /* ── EXPORTAR CSV ── */
