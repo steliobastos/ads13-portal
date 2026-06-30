@@ -577,7 +577,14 @@ async function entrarAluno(){
   ir('tela-prova');
   $('p-titulo').textContent=cap.titulo;
   $('p-info').textContent=nome+' · '+mat+' · '+cap.data;
-  renderQ(); startTimer();
+  renderQ();
+  /* Prova Final (capIdx 5) nao tem limite de tempo */
+  if(ST.capIdx===5){
+    $('timer').style.display='none';
+  } else {
+    $('timer').style.display='';
+    startTimer();
+  }
 }
 
 async function entrarProf(){
@@ -668,10 +675,15 @@ function finalizar(){
 async function enviarSheets(nota,acertos){
   const el=$('msg-envio'),cap=CAPS[ST.capIdx];
 
-  const gasto=CFG.TEMPO_MIN*60-ST.seg;
+  let tempoStr;
+  if(ST.capIdx===5){
+    tempoStr='sem limite';
+  } else {
+    const gasto=CFG.TEMPO_MIN*60-ST.seg;
+    tempoStr=Math.floor(gasto/60)+'min '+(gasto%60)+'s';
+  }
   const linha=[new Date().toLocaleString('pt-BR'),ST.nome,ST.mat,cap.titulo,
-    ...ST.resp.map(r=>r||'-'),acertos,nota,
-    Math.floor(gasto/60)+'min '+(gasto%60)+'s'];
+    ...ST.resp.map(r=>r||'-'),acertos,nota,tempoStr];
   try{
     await sheetsAppend(cap.aba,linha);
     el.textContent='✓ Resultado enviado ao professor com sucesso.'; el.className='msg ok';
